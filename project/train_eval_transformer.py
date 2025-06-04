@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
+from pathlib import Path
 
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import StandardScaler
@@ -32,7 +33,8 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 1) NPZ 읽기
-    data = np.load("transformer_data.npz", allow_pickle=True)
+    BASE_DIR = Path(__file__).resolve().parent
+    data = np.load(BASE_DIR / "transformer_data.npz", allow_pickle=True)
     X = data["X"]   # (windows, N, C, K)
     Y = data["Y"]   # (windows, N)
     H, W = int(data["H"]), int(data["W"])
@@ -160,7 +162,8 @@ def main():
             print(f"Month {m} metrics: Acc={m_acc:.4f} Prec={m_prec:.4f} Rec={m_rec:.4f} F1={m_f1:.4f}")
 
     # 14) Save predictions per month to CSV
-    grid = pd.read_csv("grid_meta.csv", encoding="utf-8-sig")
+    grid = pd.read_csv(BASE_DIR / "grid_meta.csv", encoding="utf-8-sig")
+
     records = []
     for m in range(6, 11):
         mask = eval_months == m
@@ -174,7 +177,7 @@ def main():
             records.append(df.merge(grid, on="grid_idx"))
     if records:
         pd.concat(records).to_csv(
-            "transformer_predictions_2020.csv",
+            BASE_DIR / "transformer_predictions_2020.csv",
             index=False,
             encoding="utf-8-sig",
         )
