@@ -163,6 +163,7 @@ def main():
 
     # 14) Save predictions per month to CSV
     grid = pd.read_csv(BASE_DIR / "grid_meta.csv", encoding="utf-8-sig")
+
     records = []
     for m in range(6, 11):
         mask = eval_months == m
