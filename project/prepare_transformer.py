@@ -5,10 +5,13 @@ import numpy as np
 import re
 from numpy.lib.stride_tricks import sliding_window_view
 from math import ceil
+from pathlib import Path
 
 # 1) Load static & dynamic
-static_df = pd.read_excel('data1.xlsx')   # 정적 피처
-dyn_df    = pd.read_excel('data2.xlsx')   # wide-format 동적 피처
+BASE_DIR = Path(__file__).resolve().parent
+
+static_df = pd.read_excel(BASE_DIR / 'data1.xlsx')   # 정적 피처
+dyn_df    = pd.read_excel(BASE_DIR / 'data2.xlsx')   # wide-format 동적 피처
 
 id_cols = ['격자100m','위도','경도']
 
@@ -25,12 +28,9 @@ panel_dyn = (
 )
 # 4) 분리해서 year_month, feature 컬럼 생성
 panel_dyn['feature'] = panel_dyn['orig'].str.rsplit('_', n=2).str[0]
-panel_dyn['year_month'] = (
-    panel_dyn['orig']
-    .str.extract(r'_(\d{2})_(\d{2})$')
-    .apply(lambda row: f"20{row[0]}-{row[1]}", axis=1)
-)
-panel_dyn = panel_dyn.drop(columns='orig')
+yy_mm = panel_dyn['orig'].str.extract(r'_(\d{2})_(\d{2})$')
+panel_dyn['year_month'] = '20' + yy_mm[0] + '-' + yy_mm[1]
+panel_dyn = panel_dyn.drop(columns=['orig'])
 
 # 5) pivot so each row=(격자,year_month), columns=feature, values=value
 panel_dyn = (
@@ -106,7 +106,7 @@ Y      = Y[K-1:]                                           # (T-K, N)
 
 # 12) 저장
 np.savez_compressed(
-    'transformer_data.npz',
+    BASE_DIR / 'transformer_data.npz',
     X=X,
     Y=Y,
     H=H, W=W,
@@ -114,7 +114,7 @@ np.savez_compressed(
     dyn_feats=dyn_feats
 )
 grid_meta[['grid_idx','격자100m','위도','경도']].to_csv(
-    'grid_meta.csv', index=False, encoding='utf-8-sig'
+    BASE_DIR / 'grid_meta.csv', index=False, encoding='utf-8-sig'
 )
 
 print("✅ prepare_transformer complete")
