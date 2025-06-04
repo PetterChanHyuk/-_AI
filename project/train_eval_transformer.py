@@ -69,6 +69,9 @@ def main():
     X_eval  = X_flat[train_size:][eval_mask]
     Y_eval  = Y_flat[train_size:][eval_mask]
 
+    # evaluation용 월 정보 (6~10월) 추출
+    eval_months = np.repeat(month_of_pred[num_train_windows:], N)[eval_mask]
+
     print(f"Train samples={len(Y_train)}, Eval samples={len(Y_eval)}  (6–10월만)")
 
     # 8) 피처 스케일링
@@ -126,6 +129,16 @@ def main():
         print(f"Epoch {epoch}/{epochs}  TrainLoss={avg_loss:.4f}  "
               f"Eval Acc={acc:.4f}  Prec={prec:.4f}  Rec={rec:.4f}  F1={f1:.4f}")
 
+        # 월별 지표
+        for m in range(6, 11):
+            mask = eval_months == m
+            if np.any(mask):
+                m_acc  = accuracy_score(all_trues[mask], preds_bin[mask])
+                m_prec = precision_score(all_trues[mask], preds_bin[mask], zero_division=0)
+                m_rec  = recall_score(all_trues[mask], preds_bin[mask], zero_division=0)
+                m_f1   = f1_score(all_trues[mask], preds_bin[mask], zero_division=0)
+                print(f"    {m}월: Acc={m_acc:.4f} Prec={m_prec:.4f} Rec={m_rec:.4f} F1={m_f1:.4f}")
+
     # 12) 임계값 튜닝
     best_thr, best_f1 = 0.5, 0.0
     for thr in np.linspace(0.1, 0.9, 81):
@@ -136,7 +149,15 @@ def main():
     print(f"\nOptimal threshold={best_thr:.2f}, F1={best_f1:.4f}")
 
     # 13) 월별(6–10월) 지표 출력
-    # (필터링 했으므로 따로 월별 분리 없이 전체 성능만 보임)
+    preds_opt = (all_preds >= best_thr).astype(int)
+    for m in range(6, 11):
+        mask = eval_months == m
+        if np.any(mask):
+            m_acc  = accuracy_score(all_trues[mask], preds_opt[mask])
+            m_prec = precision_score(all_trues[mask], preds_opt[mask], zero_division=0)
+            m_rec  = recall_score(all_trues[mask], preds_opt[mask], zero_division=0)
+            m_f1   = f1_score(all_trues[mask], preds_opt[mask], zero_division=0)
+            print(f"Month {m} metrics: Acc={m_acc:.4f} Prec={m_prec:.4f} Rec={m_rec:.4f} F1={m_f1:.4f}")
 
 if __name__ == "__main__":
     main()
