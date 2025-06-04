@@ -159,5 +159,25 @@ def main():
             m_f1   = f1_score(all_trues[mask], preds_opt[mask], zero_division=0)
             print(f"Month {m} metrics: Acc={m_acc:.4f} Prec={m_prec:.4f} Rec={m_rec:.4f} F1={m_f1:.4f}")
 
+    # 14) Save predictions per month to CSV
+    grid = pd.read_csv("grid_meta.csv", encoding="utf-8-sig")
+    records = []
+    for m in range(6, 11):
+        mask = eval_months == m
+        if np.any(mask):
+            df = pd.DataFrame({
+                "year_month": f"2020-{m:02d}",
+                "grid_idx": np.arange(N),
+                "true": all_trues[mask],
+                "pred": preds_opt[mask],
+            })
+            records.append(df.merge(grid, on="grid_idx"))
+    if records:
+        pd.concat(records).to_csv(
+            "transformer_predictions_2020.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+
 if __name__ == "__main__":
     main()
